@@ -1,0 +1,9 @@
+*.exe
+*.o
+*.tmp
+bigfile.txt
+bigfile.huf
+test.huf
+recovered.txt
+secret.huf
+decrypted.txt
