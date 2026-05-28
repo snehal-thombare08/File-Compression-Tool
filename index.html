@@ -1,23 +1,347 @@
+﻿
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HuffZip - File Compression Tool</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f0; min-height: 100vh; display: flex; align-items: flex-start; justify-content: center; padding: 2rem 1rem; }
+  .app { max-width: 580px; width: 100%; }
+  .header { margin-bottom: 2rem; }
+  .header h1 { font-size: 24px; font-weight: 600; color: #1a1a18; display: flex; align-items: center; gap: 10px; }
+  .header p { font-size: 14px; color: #888780; margin-top: 6px; }
+  .card { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; padding: 1.5rem; margin-bottom: 1rem; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 1.5rem; }
+  .tab { flex: 1; padding: 9px; border: 0.5px solid #d3d1c7; border-radius: 8px; background: transparent; color: #888780; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px; transition: all 0.15s; }
+  .tab.active { border-color: #5f5e5a; color: #1a1a18; background: #f1efe8; font-weight: 500; }
+  .drop-zone { border: 1.5px dashed #d3d1c7; border-radius: 12px; padding: 2.5rem 1rem; text-align: center; cursor: pointer; transition: all 0.15s; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: #888780; background: #f1efe8; }
+  .drop-zone i { font-size: 36px; color: #b4b2a9; display: block; margin-bottom: 10px; }
+  .drop-zone p { font-size: 14px; color: #888780; }
+  .drop-zone span { font-size: 12px; color: #b4b2a9; }
+  #file-input { display: none; }
+  .file-info { display: none; align-items: center; gap: 10px; padding: 10px 12px; background: #f1efe8; border-radius: 8px; margin-top: 12px; }
+  .file-info i { font-size: 20px; color: #888780; }
+  .file-name { font-size: 14px; color: #1a1a18; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .file-size { font-size: 12px; color: #b4b2a9; white-space: nowrap; }
+  .remove-btn { background: none; border: none; cursor: pointer; color: #b4b2a9; font-size: 18px; line-height: 1; padding: 2px; }
+  .field { margin-top: 1rem; }
+  .field label { font-size: 13px; color: #888780; display: block; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 9px 12px; border: 0.5px solid #d3d1c7; border-radius: 8px; font-size: 14px; background: #fff; color: #1a1a18; outline: none; transition: border 0.15s; }
+  .field input:focus { border-color: #888780; }
+  .encrypt-row { display: flex; align-items: center; gap: 8px; margin-top: 1rem; cursor: pointer; }
+  .encrypt-row input[type=checkbox] { width: 16px; height: 16px; cursor: pointer; accent-color: #1a1a18; }
+  .encrypt-row label { font-size: 14px; color: #888780; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .password-wrap { display: none; margin-top: 0.75rem; }
+  .action-btn { width: 100%; padding: 11px; border: 0.5px solid #d3d1c7; border-radius: 8px; background: #fff; color: #1a1a18; font-size: 15px; cursor: pointer; margin-top: 1.25rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; font-weight: 500; }
+  .action-btn:hover:not(:disabled) { background: #f1efe8; }
+  .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .progress-wrap { display: none; margin-top: 1rem; }
+  .progress-bar { height: 4px; background: #f1efe8; border-radius: 2px; overflow: hidden; }
+  .progress-fill { height: 100%; width: 0%; background: #1a1a18; transition: width 0.4s ease; border-radius: 2px; }
+  .progress-label { font-size: 12px; color: #b4b2a9; margin-top: 6px; text-align: center; }
+  .result { display: none; margin-top: 1rem; }
+  .stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+  .stat { background: #f1efe8; border-radius: 8px; padding: 0.75rem 1rem; }
+  .stat .label { font-size: 12px; color: #888780; margin-bottom: 4px; }
+  .stat .value { font-size: 18px; font-weight: 600; color: #1a1a18; }
+  .download-btn { width: 100%; padding: 10px; border: 0.5px solid #d3d1c7; border-radius: 8px; background: #1a1a18; color: #fff; font-size: 14px; cursor: pointer; margin-top: 1rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.15s; font-weight: 500; }
+  .download-btn:hover { background: #2c2c2a; }
+  .cmd-card { background: #fff; border: 0.5px solid #d3d1c7; border-radius: 12px; padding: 1.25rem; }
+  .cmd-label { font-size: 13px; color: #888780; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .cmd-box { background: #f1efe8; border-radius: 8px; padding: 1rem; }
+  .cmd-box p { font-size: 11px; color: #b4b2a9; margin-bottom: 6px; }
+  .cmd-box code { font-family: 'Courier New', monospace; font-size: 13px; color: #1a1a18; display: block; line-height: 1.8; word-break: break-all; }
+  .badge { display: inline-flex; align-items: center; gap: 4px; background: #eaf3de; color: #3b6d11; font-size: 12px; padding: 3px 10px; border-radius: 20px; margin-top: 0.5rem; }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <h1><i class="ti ti-file-zip"></i> HuffZip</h1>
+    <p>Huffman coding based file compression with XOR encryption — C++ project</p>
+  </div>
 
-<!doctype html><html data-build-id="fbd2285e85" data-git-hash="fbd2285e858151debed454194476da2789d79130" data-build-timestamp="1779926309" data-version="1.0.0" data-env="" data-color-version="v2" lang="en" data-theme="claude" data-mode="light" class="h-screen antialiased scroll-smooth"><head data-ion-ip-country="IN"><link rel="preconnect" href="https://assets-proxy.anthropic.com" crossorigin><link rel="dns-prefetch" href="https://assets-proxy.anthropic.com"><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title data-react-fallback>Claude</title><meta data-react-fallback name="description" content="Claude is Anthropic's AI, built for problem solvers. Tackle complex challenges, analyze data, write code, and think through your hardest work."><meta name="apple-itunes-app" content="app-id=6473753684"><meta property="og:type" content="website"><meta property="og:site_name" content="Claude"><meta property="og:image" content="https://claude.ai/images/claude_ogimage.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><link rel="icon" type="image/svg+xml" href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/cd02a42d9-Vq_H3mgS.svg"><link rel="icon" type="image/png" sizes="32x32" href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/ce67964e7-CAX1bqSh.png"><link rel="icon" type="image/png" sizes="16x16" href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c03e51811-DebilQLI.png"><link rel="shortcut icon" href="/favicon.ico"><link rel="apple-touch-icon" href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c129d018a-jJjJELY8.png"><link rel="apple-touch-startup-image" href="/images/claude_app_icon.png"><link rel="manifest" href="/manifest.json"><meta name="mobile-web-app-capable" content="yes"><link rel="preload" href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/cc27851ad-CFxw3nG7.woff2" as="font" type="font/woff2" crossorigin><link rel="preload" href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c66fc489e-C-BHYa_K.woff2" as="font" type="font/woff2" crossorigin><script nonce="JAYacfwiFuXbMg4ffoHy/g==">void 0===globalThis.process&&(globalThis.process={env:{},cwd:function(){return"/"}}),void 0===globalThis.global&&(globalThis.global=globalThis)</script><script type="application/ld+json" nonce="JAYacfwiFuXbMg4ffoHy/g==">{
-        "@context": "https://schema.org",
-        "@graph": [
-          {
-            "@type": "WebSite",
-            "name": "Claude",
-            "alternateName": ["Claude.ai", "Claude by Anthropic"],
-            "url": "https://claude.com"
-          },
-          {
-            "@type": "Organization",
-            "name": "Anthropic",
-            "url": "https://www.anthropic.com",
-            "logo": "https://claude.ai/images/claude_ogimage.png",
-            "sameAs": [
-              "https://x.com/AnthropicAI",
-              "https://www.linkedin.com/company/anthropic",
-              "https://www.youtube.com/@anthropic-ai"
-            ]
-          }
-        ]
-      }</script><script nonce="JAYacfwiFuXbMg4ffoHy/g==">!function(){try{performance.mark?.("rq_cache:preload_start");const e="keyval-store",o="keyval",r="react-query-cache",t=new Promise(t=>{if(!window.indexedDB)return void t(void 0);const c=indexedDB.open(e);c.onupgradeneeded=()=>{c.transaction?.abort()},c.onerror=()=>t(void 0),c.onsuccess=()=>{const a=c.result;if(!a.objectStoreNames.contains(o))return a.close(),indexedDB.deleteDatabase(e),void t(void 0);try{const e=a.transaction(o,"readonly").objectStore(o).get(r);e.onerror=()=>{a.close(),t(void 0)},e.onsuccess=()=>{a.close(),window.__PRELOADED_IDB_CACHE_RESULT__=e.result,t(e.result)}}catch{a.close(),t(void 0)}}});window.__PRELOADED_IDB_CACHE__=t,performance.measure?.("rq_cache:preload_exec",{start:"rq_cache:preload_start"})}catch{}}()</script><link rel="preconnect" href="https://js.stripe.com"><link rel="preconnect" href="https://m.stripe.network"><script type="module" crossorigin src="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/index-CRKNK2ax.js" nonce="JAYacfwiFuXbMg4ffoHy/g=="></script><link rel="stylesheet" crossorigin href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/ca9c256b9-CUpMznhk.css"><link rel="stylesheet" crossorigin href="https://assets-proxy.anthropic.com/claude-ai/v2/assets/v1/c6a992d55-CvQ6pDIj.css"></head><body class="bg-bg-100 text-text-100 font-ui min-h-screen"><div id="root"></div></body></html>
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('compress')" id="tab-compress">
+        <i class="ti ti-archive"></i> Compress
+      </button>
+      <button class="tab" onclick="switchTab('decompress')" id="tab-decompress">
+        <i class="ti ti-archive-off"></i> Decompress
+      </button>
+    </div>
+
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('file-input').click()"
+      ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <i class="ti ti-cloud-upload"></i>
+      <p>Drop your file here or click to browse</p>
+      <span id="drop-hint">Any file type supported</span>
+    </div>
+    <input type="file" id="file-input" onchange="handleFileSelect(event)">
+
+    <div class="file-info" id="file-info">
+      <i class="ti ti-file"></i>
+      <span class="file-name" id="file-name-display">—</span>
+      <span class="file-size" id="file-size-display">—</span>
+      <button class="remove-btn" onclick="removeFile()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="field">
+      <label>Output filename</label>
+      <input type="text" id="output-name" placeholder="output.huf" oninput="updateCmd()">
+    </div>
+
+    <div class="encrypt-row">
+      <input type="checkbox" id="encrypt-toggle" onchange="toggleEncrypt()">
+      <label for="encrypt-toggle"><i class="ti ti-lock"></i> Enable encryption</label>
+    </div>
+    <div class="password-wrap" id="password-wrap">
+      <div class="field" style="margin-top:0.5rem">
+        <label>Password</label>
+        <input type="password" id="password-input" placeholder="Enter password" oninput="updateCmd()">
+      </div>
+    </div>
+
+    <button class="action-btn" id="action-btn" onclick="runAction()" disabled>
+      <i class="ti ti-archive" id="action-icon"></i>
+      <span id="action-label">Compress file</span>
+    </button>
+
+    <div class="progress-wrap" id="progress-wrap">
+      <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+      <p class="progress-label" id="progress-label">Processing...</p>
+    </div>
+
+    <div class="result" id="result">
+      <div class="stats" id="stats-grid"></div>
+      <button class="download-btn" id="download-btn">
+        <i class="ti ti-download"></i> Download output file
+      </button>
+    </div>
+  </div>
+
+  <div class="cmd-card">
+    <p class="cmd-label"><i class="ti ti-terminal"></i> Equivalent PowerShell command</p>
+    <div class="cmd-box">
+      <p>Run this in your project folder:</p>
+      <code id="cmd-output">.\huffzip -c &lt;input&gt; &lt;output.huf&gt;</code>
+    </div>
+  </div>
+</div>
+
+<script>
+let currentTab = 'compress';
+let selectedFile = null;
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.getElementById('tab-compress').classList.toggle('active', tab === 'compress');
+  document.getElementById('tab-decompress').classList.toggle('active', tab === 'decompress');
+  const icon = document.getElementById('action-icon');
+  const label = document.getElementById('action-label');
+  if (tab === 'compress') {
+    icon.className = 'ti ti-archive';
+    label.textContent = 'Compress file';
+    document.getElementById('drop-hint').textContent = 'Any file type supported';
+    document.getElementById('output-name').placeholder = 'output.huf';
+  } else {
+    icon.className = 'ti ti-archive-off';
+    label.textContent = 'Decompress file';
+    document.getElementById('drop-hint').textContent = '.huf files only';
+    document.getElementById('output-name').placeholder = 'output.txt';
+  }
+  removeFile();
+  updateCmd();
+}
+
+function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave() { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function handleDrop(e) { e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-over'); const f = e.dataTransfer.files[0]; if (f) setFile(f); }
+function handleFileSelect(e) { const f = e.target.files[0]; if (f) setFile(f); }
+
+function setFile(f) {
+  selectedFile = f;
+  document.getElementById('file-name-display').textContent = f.name;
+  document.getElementById('file-size-display').textContent = formatBytes(f.size);
+  document.getElementById('file-info').style.display = 'flex';
+  const base = f.name.replace(/\.[^.]+$/, '');
+  document.getElementById('output-name').value = currentTab === 'compress' ? base + '.huf' : base + '_recovered.txt';
+  document.getElementById('action-btn').disabled = false;
+  document.getElementById('result').style.display = 'none';
+  updateCmd();
+}
+
+function removeFile() {
+  selectedFile = null;
+  document.getElementById('file-info').style.display = 'none';
+  document.getElementById('action-btn').disabled = true;
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('progress-wrap').style.display = 'none';
+  document.getElementById('file-input').value = '';
+  updateCmd();
+}
+
+function toggleEncrypt() {
+  const on = document.getElementById('encrypt-toggle').checked;
+  document.getElementById('password-wrap').style.display = on ? 'block' : 'none';
+  updateCmd();
+}
+
+function formatBytes(b) {
+  if (b < 1024) return b + ' B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + ' KB';
+  return (b/(1024*1024)).toFixed(2) + ' MB';
+}
+
+function updateCmd() {
+  const fname = selectedFile ? selectedFile.name : '<input>';
+  const outname = document.getElementById('output-name').value || (currentTab === 'compress' ? '<output.huf>' : '<output>');
+  const enc = document.getElementById('encrypt-toggle').checked;
+  const pass = document.getElementById('password-input') ? document.getElementById('password-input').value : '';
+  const flag = currentTab === 'compress' ? '-c' : '-d';
+  let cmd = `.\\huffzip ${flag} ${fname} ${outname}`;
+  if (enc && pass) cmd += ` -p ${pass}`;
+  document.getElementById('cmd-output').textContent = cmd;
+}
+
+function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+function setProgress(pct, label) {
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('progress-label').textContent = label;
+}
+
+async function runAction() {
+  if (!selectedFile) return;
+  const enc = document.getElementById('encrypt-toggle').checked;
+  const pass = enc ? document.getElementById('password-input').value : '';
+  const outName = document.getElementById('output-name').value || 'output.huf';
+  document.getElementById('progress-wrap').style.display = 'block';
+  document.getElementById('result').style.display = 'none';
+  document.getElementById('action-btn').disabled = true;
+  setProgress(10, 'Reading file...');
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    let data = new Uint8Array(e.target.result);
+    await delay(300); setProgress(40, currentTab === 'compress' ? 'Building Huffman tree...' : 'Parsing header...');
+    await delay(400); setProgress(70, currentTab === 'compress' ? 'Encoding bits...' : 'Decoding bits...');
+    let output;
+    try {
+      if (currentTab === 'compress') {
+        output = huffmanCompress(data);
+        if (enc && pass) output = xorEncrypt(output, pass);
+      } else {
+        let input = data;
+        if (enc && pass) input = xorEncrypt(input, pass);
+        output = huffmanDecompress(input);
+      }
+    } catch(err) {
+      alert('Error: ' + err.message);
+      document.getElementById('action-btn').disabled = false;
+      return;
+    }
+    await delay(200); setProgress(100, 'Done!');
+    const blob = new Blob([output]);
+    showResult(data.length, output.length, outName, blob);
+    document.getElementById('action-btn').disabled = false;
+  };
+  reader.readAsArrayBuffer(selectedFile);
+}
+
+function xorEncrypt(data, pass) {
+  const key = deriveKey(pass);
+  const result = new Uint8Array(data.length);
+  for (let i = 0; i < data.length; i++) result[i] = data[i] ^ key[i % key.length];
+  return result;
+}
+function deriveKey(pass) {
+  const key = new Uint8Array(32);
+  for (let i = 0; i < 32; i++) key[i] = (pass.charCodeAt(i % pass.length) ^ (i * 31 + 7)) & 0xFF;
+  for (let i = 1; i < 32; i++) key[i] ^= key[i-1];
+  return key;
+}
+function huffmanCompress(data) {
+  const freq = {};
+  for (const b of data) freq[b] = (freq[b] || 0) + 1;
+  const entries = Object.entries(freq).map(([b, f]) => ({ byte: parseInt(b), freq: f, left: null, right: null, isLeaf: true }));
+  if (entries.length === 0) return new Uint8Array(0);
+  const heap = [...entries];
+  heap.sort((a, b) => a.freq - b.freq);
+  while (heap.length > 1) {
+    const a = heap.shift(), b = heap.shift();
+    const node = { byte: 0, freq: a.freq + b.freq, left: a, right: b, isLeaf: false };
+    let i = 0; while (i < heap.length && heap[i].freq < node.freq) i++;
+    heap.splice(i, 0, node);
+  }
+  const root = heap[0];
+  const codes = {};
+  function genCodes(node, code) {
+    if (!node) return;
+    if (node.isLeaf) { codes[node.byte] = code || '0'; return; }
+    genCodes(node.left, code + '0'); genCodes(node.right, code + '1');
+  }
+  genCodes(root, '');
+  const treeBytes = [];
+  function serTree(node) {
+    if (!node) return;
+    if (node.isLeaf) { treeBytes.push(49); treeBytes.push(node.byte); }
+    else { treeBytes.push(48); serTree(node.left); serTree(node.right); }
+  }
+  serTree(root);
+  let bits = '';
+  for (const b of data) bits += codes[b];
+  const padding = (8 - (bits.length % 8)) % 8;
+  bits += '0'.repeat(padding);
+  const compressed = [];
+  for (let i = 0; i < bits.length; i += 8) compressed.push(parseInt(bits.slice(i, i+8), 2));
+  const header = [72, 85, 70, 70, padding, treeBytes.length & 0xFF, (treeBytes.length >> 8) & 0xFF, (treeBytes.length >> 16) & 0xFF, (treeBytes.length >> 24) & 0xFF];
+  return new Uint8Array([...header, ...treeBytes, ...compressed]);
+}
+function huffmanDecompress(data) {
+  if (data.length < 9 || data[0]!==72||data[1]!==85||data[2]!==70||data[3]!==70) throw new Error('Not a valid .huf file!');
+  let idx = 4;
+  const padding = data[idx++];
+  const treeSize = data[idx] | (data[idx+1]<<8) | (data[idx+2]<<16) | (data[idx+3]<<24);
+  idx += 4;
+  const treeData = data.slice(idx, idx + treeSize); idx += treeSize;
+  let ti = 0;
+  function deserTree() {
+    if (ti >= treeData.length) return null;
+    const m = treeData[ti++];
+    if (m === 49) { return { byte: treeData[ti++], isLeaf: true, left: null, right: null }; }
+    return { isLeaf: false, left: deserTree(), right: deserTree() };
+  }
+  const root = deserTree();
+  const compBits = data.slice(idx);
+  const totalBits = compBits.length * 8 - padding;
+  const out = [];
+  let cur = root, bitsRead = 0;
+  for (let i = 0; i < compBits.length && bitsRead < totalBits; i++) {
+    for (let bit = 7; bit >= 0 && bitsRead < totalBits; bit--) {
+      const b = (compBits[i] >> bit) & 1; bitsRead++;
+      if (cur.isLeaf) { out.push(cur.byte); cur = root; }
+      cur = b === 0 ? cur.left : cur.right;
+      if (cur && cur.isLeaf) { out.push(cur.byte); cur = root; }
+    }
+  }
+  return new Uint8Array(out);
+}
+function showResult(origSize, outSize, outName, blob) {
+  const ratio = ((1 - outSize/origSize)*100).toFixed(1);
+  const isComp = currentTab === 'compress';
+  document.getElementById('stats-grid').innerHTML = `
+    <div class="stat"><div class="label">Original</div><div class="value">${formatBytes(origSize)}</div></div>
+    <div class="stat"><div class="label">${isComp ? 'Compressed' : 'Recovered'}</div><div class="value">${formatBytes(outSize)}</div></div>
+    <div class="stat"><div class="label">${isComp ? 'Ratio' : 'Status'}</div><div class="value">${isComp ? ratio + '%' : '✓ OK'}</div></div>
+  `;
+  document.getElementById('download-btn').onclick = () => {
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = outName; a.click();
+  };
+  document.getElementById('result').style.display = 'block';
+}
+</script>
+</body>
+</html>
